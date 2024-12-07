@@ -22,7 +22,7 @@ using BlocksMetadata = util::SmallHeap<uint16_t, uint8_t>;
 
 class Chunk {
 public:
-    int x, z;
+    int x, y, z;
     int bottom, top;
     voxel voxels[CHUNK_VOL] {};
     Lightmap lightmap;

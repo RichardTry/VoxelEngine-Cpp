@@ -9,7 +9,7 @@
 
 #include "typedefs.hpp"
 #include "voxel.hpp"
-#include "util/AreaMap2D.hpp"
+#include "util/AreaMap3D.hpp"
 
 class VoxelRenderer;
 
@@ -39,13 +39,15 @@ class Chunks {
         uint8_t rotation
     );
 
-    util::AreaMap2D<std::shared_ptr<Chunk>, int32_t> areaMap;
+    util::AreaMap3D<std::shared_ptr<Chunk>, int32_t> areaMap;
     WorldFiles* worldFiles;
 public:
     Chunks(
         int32_t w,
+        int32_t h,
         int32_t d,
         int32_t ox,
+        int32_t oy,
         int32_t oz,
         WorldFiles* worldFiles,
         Level* level
@@ -54,7 +56,7 @@ public:
 
     bool putChunk(const std::shared_ptr<Chunk>& chunk);
 
-    Chunk* getChunk(int32_t x, int32_t z) const;
+    Chunk* getChunk(int32_t x, int32_t y, int32_t z) const;
     Chunk* getChunkByVoxel(int32_t x, int32_t y, int32_t z) const;
     voxel* get(int32_t x, int32_t y, int32_t z) const;
     voxel& require(int32_t x, int32_t y, int32_t z) const;
@@ -120,8 +122,8 @@ public:
 
     void getVoxels(VoxelsVolume* volume, bool backlight = false) const;
 
-    void setCenter(int32_t x, int32_t z);
-    void resize(uint32_t newW, uint32_t newD);
+    void setCenter(int32_t x, int32_t y, int32_t z);
+    void resize(uint32_t newW, uint32_t newH, uint32_t newD);
 
     void saveAndClear();
     void save(Chunk* chunk);

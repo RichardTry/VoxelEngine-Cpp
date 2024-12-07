@@ -27,30 +27,30 @@
 
 Chunks::Chunks(
     int32_t w,
+    int32_t h,
     int32_t d,
     int32_t ox,
+    int32_t oy,
     int32_t oz,
     WorldFiles* wfile,
     Level* level
 )
     : level(level),
       indices(level->content->getIndices()),
-      areaMap(w, d),
+      areaMap(w, h, d),
       worldFiles(wfile) {
-    areaMap.setCenter(ox-w/2, oz-d/2);
-    areaMap.setOutCallback([this](int, int, const auto& chunk) {
+    areaMap.setCenter(ox-w/2, oy-h/2, oz-d/2);
+    areaMap.setOutCallback([this](int, int, int, const auto& chunk) {
         save(chunk.get());
         this->level->events->trigger(EVT_CHUNK_HIDDEN, chunk.get());
     });
 }
 
 voxel* Chunks::get(int32_t x, int32_t y, int32_t z) const {
-    if (y < 0 || y >= CHUNK_H) {
-        return nullptr;
-    }
     int cx = floordiv(x, CHUNK_W);
+    int cy = floordiv(y, CHUNK_H);
     int cz = floordiv(z, CHUNK_D);
-    auto ptr = areaMap.getIf(cx, cz);
+    auto ptr = areaMap.getIf(cx, cy, cz);
     if (ptr == nullptr) {
         return nullptr;
     }
@@ -59,8 +59,9 @@ voxel* Chunks::get(int32_t x, int32_t y, int32_t z) const {
         return nullptr;
     }
     int lx = x - cx * CHUNK_W;
+    int ly = y - cy * CHUNK_H;
     int lz = z - cz * CHUNK_D;
-    return &chunk->voxels[(y * CHUNK_D + lz) * CHUNK_W + lx];
+    return &chunk->voxels[(ly * CHUNK_D + lz) * CHUNK_W + lx];
 }
 
 voxel& Chunks::require(int32_t x, int32_t y, int32_t z) const {
@@ -123,13 +124,11 @@ bool Chunks::isObstacleBlock(int32_t x, int32_t y, int32_t z) {
 }
 
 ubyte Chunks::getLight(int32_t x, int32_t y, int32_t z, int channel) const {
-    if (y < 0 || y >= CHUNK_H) {
-        return 0;
-    }
     int cx = floordiv(x, CHUNK_W);
+    int cy = floordiv(y, CHUNK_H);
     int cz = floordiv(z, CHUNK_D);
 
-    auto ptr = areaMap.getIf(cx, cz);
+    auto ptr = areaMap.getIf(cx, cy, cz);
     if (ptr == nullptr) {
         return 0;
     }
@@ -138,18 +137,17 @@ ubyte Chunks::getLight(int32_t x, int32_t y, int32_t z, int channel) const {
         return 0;
     }
     int lx = x - cx * CHUNK_W;
+    int ly = x - cy * CHUNK_H;
     int lz = z - cz * CHUNK_D;
-    return chunk->lightmap.get(lx, y, lz, channel);
+    return chunk->lightmap.get(lx, ly, lz, channel);
 }
 
 light_t Chunks::getLight(int32_t x, int32_t y, int32_t z) const {
-    if (y < 0 || y >= CHUNK_H) {
-        return 0;
-    }
     int cx = floordiv(x, CHUNK_W);
+    int cy = floordiv(y, CHUNK_H);
     int cz = floordiv(z, CHUNK_D);
 
-    auto ptr = areaMap.getIf(cx, cz);
+    auto ptr = areaMap.getIf(cx, cy, cz);
     if (ptr == nullptr) {
         return 0;
     }
@@ -158,24 +156,23 @@ light_t Chunks::getLight(int32_t x, int32_t y, int32_t z) const {
         return 0;
     }
     int lx = x - cx * CHUNK_W;
+    int ly = y - cy * CHUNK_H;
     int lz = z - cz * CHUNK_D;
-    return chunk->lightmap.get(lx, y, lz);
+    return chunk->lightmap.get(lx, ly, lz);
 }
 
 Chunk* Chunks::getChunkByVoxel(int32_t x, int32_t y, int32_t z) const {
-    if (y < 0 || y >= CHUNK_H) {
-        return nullptr;
-    }
     int cx = floordiv(x, CHUNK_W);
+    int cy = floordiv(y, CHUNK_H);
     int cz = floordiv(z, CHUNK_D);
-    if (auto ptr = areaMap.getIf(cx, cz)) {
+    if (auto ptr = areaMap.getIf(cx, cy, cz)) {
         return ptr->get();
     }
     return nullptr;
 }
 
-Chunk* Chunks::getChunk(int x, int z) const {
-    if (auto ptr = areaMap.getIf(x, z)) {
+Chunk* Chunks::getChunk(int x, int y, int z) const {
+    if (auto ptr = areaMap.getIf(x, y, z)) {
         return ptr->get();
     }
     return nullptr;
@@ -366,12 +363,10 @@ void Chunks::setRotation(int32_t x, int32_t y, int32_t z, uint8_t index) {
 void Chunks::set(
     int32_t x, int32_t y, int32_t z, uint32_t id, blockstate state
 ) {
-    if (y < 0 || y >= CHUNK_H) {
-        return;
-    }
     int cx = floordiv(x, CHUNK_W);
+    int cy = floordiv(y, CHUNK_H);
     int cz = floordiv(z, CHUNK_D);
-    auto ptr = areaMap.getIf(cx, cz);
+    auto ptr = areaMap.getIf(cx, cy, cz);
     if (ptr == nullptr) {
         return;
     }
@@ -380,14 +375,15 @@ void Chunks::set(
         return;
     }
     int lx = x - cx * CHUNK_W;
+    int ly = y - cy * CHUNK_H;
     int lz = z - cz * CHUNK_D;
-    size_t index = vox_index(lx, y, lz);
+    size_t index = vox_index(lx, ly, lz);
 
     // block finalization
-    voxel& vox = chunk->voxels[(y * CHUNK_D + lz) * CHUNK_W + lx];
+    voxel& vox = chunk->voxels[(ly * CHUNK_D + lz) * CHUNK_W + lx];
     const auto& prevdef = indices->blocks.require(vox.id);
     if (prevdef.inventorySize != 0) {
-        chunk->removeBlockInventory(lx, y, lz);
+        chunk->removeBlockInventory(lx, ly, lz);
     }
     if (prevdef.rt.extended && !vox.state.segment) {
         eraseSegments(prevdef, vox.state, x, y, z);
@@ -416,16 +412,22 @@ void Chunks::set(
     else if (id == 0)
         chunk->updateHeights();
 
-    if (lx == 0 && (chunk = getChunk(cx - 1, cz))) {
+    if (lx == 0 && (chunk = getChunk(cx - 1, cy, cz))) {
         chunk->flags.modified = true;
     }
-    if (lz == 0 && (chunk = getChunk(cx, cz - 1))) {
+    if (ly == 0 && (chunk = getChunk(cx, cy - 1, cz))) {
         chunk->flags.modified = true;
     }
-    if (lx == CHUNK_W - 1 && (chunk = getChunk(cx, cz))) {
+    if (lz == 0 && (chunk = getChunk(cx, cy, cz - 1))) {
         chunk->flags.modified = true;
     }
-    if (lz == CHUNK_D - 1 && (chunk = getChunk(cx, cz + 1))) {
+    if (lx == CHUNK_W - 1 && (chunk = getChunk(cx + 1, cy, cz))) {
+        chunk->flags.modified = true;
+    }
+    if (ly == CHUNK_H - 1 && (chunk = getChunk(cx, cy + 1, cz))) {
+        chunk->flags.modified = true;
+    }
+    if (lz == CHUNK_D - 1 && (chunk = getChunk(cx, cy, cz + 1))) {
         chunk->flags.modified = true;
     }
 }
@@ -664,16 +666,16 @@ glm::vec3 Chunks::rayCastToObstacle(
     return glm::vec3(px + maxDist * dx, py + maxDist * dy, pz + maxDist * dz);
 }
 
-void Chunks::setCenter(int32_t x, int32_t z) {
-    areaMap.setCenter(floordiv(x, CHUNK_W), floordiv(z, CHUNK_D));
+void Chunks::setCenter(int32_t x, int32_t y, int32_t z) {
+    areaMap.setCenter(floordiv(x, CHUNK_W), floordiv(y, CHUNK_H), floordiv(z, CHUNK_D));
 }
 
-void Chunks::resize(uint32_t newW, uint32_t newD) {
-    areaMap.resize(newW, newD);
+void Chunks::resize(uint32_t newW, uint32_t newH, uint32_t newD) {
+    areaMap.resize(newW, newH, newD);
 }
 
 bool Chunks::putChunk(const std::shared_ptr<Chunk>& chunk) {
-    return areaMap.set(chunk->x, chunk->z, chunk);
+    return areaMap.set(chunk->x, chunk->y, chunk->z, chunk);
 }
 
 // reduce nesting on next modification
@@ -693,70 +695,75 @@ void Chunks::getVoxels(VoxelsVolume* volume, bool backlight) const {
     int d = volume->getD();
 
     int scx = floordiv(x, CHUNK_W);
+    int scy = floordiv(y, CHUNK_H);
     int scz = floordiv(z, CHUNK_D);
 
     int ecx = floordiv(x + w, CHUNK_W);
+    int ecy = floordiv(y + h, CHUNK_H);
     int ecz = floordiv(z + d, CHUNK_D);
 
     int cw = ecx - scx + 1;
+    int ch = ecy - scy + 1;
     int cd = ecz - scz + 1;
 
     // cw*cd chunks will be scanned
     for (int cz = scz; cz < scz + cd; cz++) {
-        for (int cx = scx; cx < scx + cw; cx++) {
-            const auto chunk = getChunk(cx, cz);
-            if (chunk == nullptr) {
-                // no chunk loaded -> filling with BLOCK_VOID
-                for (int ly = y; ly < y + h; ly++) {
-                    for (int lz = std::max(z, cz * CHUNK_D);
-                             lz < std::min(z + d, (cz + 1) * CHUNK_D);
-                             lz++) {
-                        for (int lx = std::max(x, cx * CHUNK_W);
-                                 lx < std::min(x + w, (cx + 1) * CHUNK_W);
-                                 lx++) {
-                            uint idx = vox_index(lx - x, ly - y, lz - z, w, d);
-                            voxels[idx].id = BLOCK_VOID;
-                            lights[idx] = 0;
+        for (int cy = scy; cy < scy + ch; cy++) {
+            for (int cx = scx; cx < scx + cw; cx++) {
+                const auto chunk = getChunk(cx, cy, cz);
+                if (chunk == nullptr) {
+                    // no chunk loaded -> filling with BLOCK_VOID
+                    for (int ly = y; ly < y + h; ly++) {
+                        for (int lz = std::max(z, cz * CHUNK_D);
+                                lz < std::min(z + d, (cz + 1) * CHUNK_D);
+                                lz++) {
+                            for (int lx = std::max(x, cx * CHUNK_W);
+                                    lx < std::min(x + w, (cx + 1) * CHUNK_W);
+                                    lx++) {
+                                uint idx = vox_index(lx - x, ly - y, lz - z, w, d);
+                                voxels[idx].id = BLOCK_VOID;
+                                lights[idx] = 0;
+                            }
                         }
                     }
-                }
-            } else {
-                const voxel* cvoxels = chunk->voxels;
-                const light_t* clights = chunk->lightmap.getLights();
-                for (int ly = y; ly < y + h; ly++) {
-                    for (int lz = std::max(z, cz * CHUNK_D);
-                             lz < std::min(z + d, (cz + 1) * CHUNK_D);
-                             lz++) {
-                        for (int lx = std::max(x, cx * CHUNK_W);
-                                 lx < std::min(x + w, (cx + 1) * CHUNK_W);
-                                 lx++) {
-                            uint vidx = vox_index(lx - x, ly - y, lz - z, w, d);
-                            uint cidx = vox_index(
-                                lx - cx * CHUNK_W,
-                                ly,
-                                lz - cz * CHUNK_D,
-                                CHUNK_W,
-                                CHUNK_D
-                            );
-                            voxels[vidx] = cvoxels[cidx];
-                            light_t light = clights[cidx];
-                            if (backlight) {
-                                const auto block =
-                                    indices->blocks.get(voxels[vidx].id);
-                                if (block && block->lightPassing) {
-                                    light = Lightmap::combine(
-                                        std::min(15,
-                                            Lightmap::extract(light, 0) + 1),
-                                        std::min(15,
-                                            Lightmap::extract(light, 1) + 1),
-                                        std::min(15,
-                                            Lightmap::extract(light, 2) + 1),
-                                        std::min(15, 
-                                            static_cast<int>(Lightmap::extract(light, 3)))
-                                    );
+                } else {
+                    const voxel* cvoxels = chunk->voxels;
+                    const light_t* clights = chunk->lightmap.getLights();
+                    for (int ly = y; ly < y + h; ly++) {
+                        for (int lz = std::max(z, cz * CHUNK_D);
+                                lz < std::min(z + d, (cz + 1) * CHUNK_D);
+                                lz++) {
+                            for (int lx = std::max(x, cx * CHUNK_W);
+                                    lx < std::min(x + w, (cx + 1) * CHUNK_W);
+                                    lx++) {
+                                uint vidx = vox_index(lx - x, ly - y, lz - z, w, d);
+                                uint cidx = vox_index(
+                                    lx - cx * CHUNK_W,
+                                    ly,
+                                    lz - cz * CHUNK_D,
+                                    CHUNK_W,
+                                    CHUNK_D
+                                );
+                                voxels[vidx] = cvoxels[cidx];
+                                light_t light = clights[cidx];
+                                if (backlight) {
+                                    const auto block =
+                                        indices->blocks.get(voxels[vidx].id);
+                                    if (block && block->lightPassing) {
+                                        light = Lightmap::combine(
+                                            std::min(15,
+                                                Lightmap::extract(light, 0) + 1),
+                                            std::min(15,
+                                                Lightmap::extract(light, 1) + 1),
+                                            std::min(15,
+                                                Lightmap::extract(light, 2) + 1),
+                                            std::min(15, 
+                                                static_cast<int>(Lightmap::extract(light, 3)))
+                                        );
+                                    }
                                 }
+                                lights[vidx] = light;
                             }
-                            lights[vidx] = light;
                         }
                     }
                 }
