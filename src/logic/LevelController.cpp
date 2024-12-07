@@ -34,6 +34,7 @@ void LevelController::update(float delta, bool input, bool pause) {
     glm::vec3 position = player->getPlayer()->getPosition();
     level->loadMatrix(
         position.x,
+        position.y,
         position.z,
         settings.chunks.loadDistance.get() + settings.chunks.padding.get() * 2
     );
