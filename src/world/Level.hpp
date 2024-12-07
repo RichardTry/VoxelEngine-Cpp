@@ -46,7 +46,7 @@ public:
     );
     ~Level();
 
-    void loadMatrix(int32_t x, int32_t z, uint32_t radius);
+    void loadMatrix(int32_t x, int32_t y, int32_t z, uint32_t radius);
 
     World* getWorld();
 
