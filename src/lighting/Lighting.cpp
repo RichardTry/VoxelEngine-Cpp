@@ -59,10 +59,10 @@ void Lighting::prebuildSkyLight(Chunk* chunk, const ContentIndices* indices){
     chunk->lightmap.highestPoint = highestPoint;
 }
 
-void Lighting::buildSkyLight(int cx, int cz){
+void Lighting::buildSkyLight(int cx, int cy, int cz){
     const auto blockDefs = content->getIndices()->blocks.getDefs();
 
-    Chunk* chunk = chunks->getChunk(cx, cz);
+    Chunk* chunk = chunks->getChunk(cx, cy, cz);
     for (int z = 0; z < CHUNK_D; z++){
         for (int x = 0; x < CHUNK_W; x++){
             int gx = x + cx * CHUNK_W;
@@ -86,14 +86,14 @@ void Lighting::buildSkyLight(int cx, int cz){
     solverS->solve();
 }
 
-void Lighting::onChunkLoaded(int cx, int cz, bool expand){
+void Lighting::onChunkLoaded(int cx, int cy, int cz, bool expand){
     LightSolver* solverR = this->solverR.get();
     LightSolver* solverG = this->solverG.get();
     LightSolver* solverB = this->solverB.get();
     LightSolver* solverS = this->solverS.get();
 
     auto blockDefs = content->getIndices()->blocks.getDefs();
-    auto chunk = chunks->getChunk(cx, cz);
+    auto chunk = chunks->getChunk(cx, cy, cz);
 
     for (uint y = 0; y < CHUNK_H; y++){
         for (uint z = 0; z < CHUNK_D; z++){

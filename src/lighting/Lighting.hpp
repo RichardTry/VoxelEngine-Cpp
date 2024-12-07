@@ -20,8 +20,8 @@ public:
     ~Lighting();
 
     void clear();
-    void buildSkyLight(int cx, int cz);
-    void onChunkLoaded(int cx, int cz, bool expand);
+    void buildSkyLight(int cx, int cy, int cz);
+    void onChunkLoaded(int cx, int cy, int cz, bool expand);
     void onBlockSet(int x, int y, int z, blockid_t id);
 
     static void prebuildSkyLight(Chunk* chunk, const ContentIndices* indices);
