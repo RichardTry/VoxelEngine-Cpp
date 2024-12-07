@@ -100,16 +100,18 @@ bool ChunksController::loadVisible() {
 bool ChunksController::buildLights(const std::shared_ptr<Chunk>& chunk) {
     int surrounding = 0;
     for (int oz = -1; oz <= 1; oz++) {
-        for (int ox = -1; ox <= 1; ox++) {
-            if (chunks.getChunk(chunk->x + ox, chunk->z + oz)) surrounding++;
+        for (int oy = -1; oy <= 1; oy++) {
+            for (int ox = -1; ox <= 1; ox++) {
+                if (chunks.getChunk(chunk->x + ox, chunk->y + oy, chunk->z + oz)) surrounding++;
+            }
         }
     }
     if (surrounding == MIN_SURROUNDING) {
         bool lightsCache = chunk->flags.loadedLights;
         if (!lightsCache) {
-            lighting.buildSkyLight(chunk->x, chunk->z);
+            lighting.buildSkyLight(chunk->x, chunk->y, chunk->z);
         }
-        lighting.onChunkLoaded(chunk->x, chunk->z, !lightsCache);
+        lighting.onChunkLoaded(chunk->x, chunk->y, chunk->z, !lightsCache);
         chunk->flags.lighted = true;
         return true;
     }
