@@ -43,7 +43,7 @@ namespace util {
                             valuesCount--;
                             continue;
                         }
-                        secondBuffer[nz * sizeY * sizeX + ny * sizeX + nx] = value;
+                        secondBuffer[(nz * sizeY + ny) * sizeX + nx] = value;
                     }
                 }
             }
@@ -65,7 +65,7 @@ namespace util {
             if (lx < 0 || ly < 0 || lz < 0 || lx >= sizeX || ly >= sizeY || lz >= sizeZ) {
                 return nullptr;
             }
-            return &firstBuffer[lz * sizeY * sizeX + ly * sizeX + lx];
+            return &firstBuffer[(lz * sizeY + ly) * sizeX + lx];
         }
 
         T get(TCoord x, TCoord y, TCoord z) const {
@@ -75,7 +75,7 @@ namespace util {
             if (lx < 0 || ly < 0 || lz < 0 || lx >= sizeX || ly >= sizeY || lz >= sizeZ) {
                 return T{};
             }
-            return firstBuffer[lz * sizeY * sizeX + ly * sizeX + lx];
+            return firstBuffer[(lz * sizeY + ly) * sizeX + lx];
         }
 
         T get(TCoord x, TCoord y, TCoord z, T& def) const {
@@ -103,7 +103,7 @@ namespace util {
             if (lx < 0 || ly < 0 || lz < 0 || lx >= sizeX || ly >= sizeY || lz >= sizeZ) {
                 throw std::invalid_argument("position is out of window");
             }
-            return firstBuffer[lz * sizeY * sizeX + ly * sizeX + lx];
+            return firstBuffer[(lz * sizeY + ly) * sizeX + lx];
         }
 
         bool set(TCoord x, TCoord y, TCoord z, T value) {
@@ -113,7 +113,7 @@ namespace util {
             if (lx < 0 || ly < 0 || lz < 0 || lx >= sizeX || ly >= sizeY || lz >= sizeZ) {
                 return false;
             }
-            auto& element = firstBuffer[lz * sizeY * sizeX + ly * sizeX + lx];
+            auto& element = firstBuffer[(lz * sizeY + ly) * sizeX + lx];
             if (value && !element) {
                 valuesCount++;
             }
@@ -153,7 +153,7 @@ namespace util {
             for (TCoord z = 0; z < sizeZ && z < newSizeZ; z++) {
                 for (TCoord y = 0; y < sizeY && y < newSizeY; y++) {
                     for (TCoord x = 0; x < sizeX && x < newSizeX; x++) {
-                        newFirstBuffer[z * newSizeY * newSizeX + y * newSizeX + x] = firstBuffer[z * sizeY * sizeX + y * sizeX + x];
+                        newFirstBuffer[(z * newSizeY + y) * newSizeX + x] = firstBuffer[(z * sizeY + y) * sizeX + x];
                     }
                 }
             }
