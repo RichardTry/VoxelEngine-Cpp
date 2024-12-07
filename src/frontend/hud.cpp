@@ -293,7 +293,7 @@ void Hud::updateWorldGenDebugVisualization() {
             int az = z - (height - areaHeight) / 2;
 
             data[(flippedZ * width + x) * 4 + 1] = 
-                level.chunks->getChunk(ax + ox, az + oz) ? 255 : 0;
+                level.chunks->getChunk(ax + ox, 0, az + oz) ? 255 : 0;
             data[(flippedZ * width + x) * 4 + 0] = 
                 level.chunksStorage->get(ax + ox, az + oz) ? 255 : 0;
 
