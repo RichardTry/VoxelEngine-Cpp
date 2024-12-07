@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 SurroundMap::SurroundMap(int maxLevelRadius, int8_t maxLevel) 
-    : areaMap((maxLevelRadius + maxLevel) * 2 + 1, 
+    : areaMap((maxLevelRadius + maxLevel) * 2 + 1,
               (maxLevelRadius + maxLevel) * 2 + 1),
       levelCallbacks(maxLevel),
       maxLevel(maxLevel) 
