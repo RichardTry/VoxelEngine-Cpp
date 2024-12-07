@@ -122,7 +122,13 @@ static int l_get_generator(lua::State* L) {
 static int l_get_chunk_data(lua::State* L) {
     int x = (int)lua::tointeger(L, 1);
     int y = (int)lua::tointeger(L, 2);
-    const auto& chunk = level->chunks->getChunk(x, y);
+    int z = (int)lua::tointeger(L, 3);
+    // TODO: Check if just 2 arguments for backward-compatibility...
+    // int z = 0;
+    // if (lua::getTop() == 3) {
+    //     z = (int)lua::tointeger(L, 3);
+    // }
+    const auto& chunk = level->chunks->getChunk(x, y, z);
     if (chunk == nullptr) {
         lua::pushnil(L);
         return 0;
@@ -173,12 +179,18 @@ static int l_get_chunk_data(lua::State* L) {
 static int l_set_chunk_data(lua::State* L) {
     int x = (int)lua::tointeger(L, 1);
     int y = (int)lua::tointeger(L, 2);
+    int z = (int)lua::tointeger(L, 3);
+    // TODO: Check if just 2 arguments for backward-compatibility...
+    // int z = 0;
+    // if (lua::getTop() == 3) {
+    //     z = (int)lua::tointeger(L, 3);
+    // }
     auto buffer = lua::touserdata<lua::LuaBytearray>(L, 3);
     bool is_compressed = false;
     if (lua::gettop(L) >= 4) {
         is_compressed = lua::toboolean(L, 4);
     }
-    auto chunk = level->chunks->getChunk(x, y);
+    auto chunk = level->chunks->getChunk(x, y, z);
     if(chunk== nullptr){
         return 0;
     }
@@ -203,29 +215,39 @@ static int l_set_chunk_data(lua::State* L) {
         chunk->decode(buffer->data().data());
     }
     chunk->updateHeights();
-    level->lighting->buildSkyLight(x, y);
+    level->lighting->buildSkyLight(x, y, z);
     chunk->flags.modified = true;
-    level->lighting->onChunkLoaded(x, y, true);
+    level->lighting->onChunkLoaded(x, y, z, true);
 
-    chunk = level->chunks->getChunk(x - 1, y);
+    chunk = level->chunks->getChunk(x - 1, y, z);
     if (chunk != nullptr) {
         chunk->flags.modified = true;
-        level->lighting->onChunkLoaded(x - 1, y, true);
+        level->lighting->onChunkLoaded(x - 1, y, z, true);
     }
-    chunk = level->chunks->getChunk(x + 1, y);
+    chunk = level->chunks->getChunk(x + 1, y, z);
     if (chunk != nullptr) {
         chunk->flags.modified = true;
-        level->lighting->onChunkLoaded(x + 1, y, true);
+        level->lighting->onChunkLoaded(x + 1, y, z, true);
     }
-    chunk = level->chunks->getChunk(x, y - 1);
+    chunk = level->chunks->getChunk(x, y - 1, z);
     if (chunk != nullptr) {
         chunk->flags.modified = true;
-        level->lighting->onChunkLoaded(x, y - 1, true);
+        level->lighting->onChunkLoaded(x, y - 1, z, true);
     }
-    chunk = level->chunks->getChunk(x, y + 1);
+    chunk = level->chunks->getChunk(x, y + 1, z);
     if (chunk != nullptr) {
         chunk->flags.modified = true;
-        level->lighting->onChunkLoaded(x, y + 1, true);
+        level->lighting->onChunkLoaded(x, y + 1, z, true);
+    }
+    chunk = level->chunks->getChunk(x, y, z - 1);
+    if (chunk != nullptr) {
+        chunk->flags.modified = true;
+        level->lighting->onChunkLoaded(x, y, z - 1, true);
+    }
+    chunk = level->chunks->getChunk(x, y, z + 1);
+    if (chunk != nullptr) {
+        chunk->flags.modified = true;
+        level->lighting->onChunkLoaded(x, y, z + 1, true);
     }
 
     return 1;
