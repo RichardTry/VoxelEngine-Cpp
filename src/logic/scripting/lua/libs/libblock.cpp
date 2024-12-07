@@ -493,11 +493,13 @@ static int l_get_field(lua::State* L) {
         index = lua::tointeger(L, 5);
     }
     auto cx = floordiv(x, CHUNK_W);
+    auto cy = floordiv(y, CHUNK_H);
     auto cz = floordiv(z, CHUNK_D);
-    auto chunk = level->chunks->getChunk(cx, cz);
+    auto chunk = level->chunks->getChunk(cx, cy, cz);
     auto lx = x - cx * CHUNK_W;
+    auto ly = y - cy * CHUNK_H;
     auto lz = z - cz * CHUNK_W;
-    size_t voxelIndex = vox_index(lx, y, lz);
+    size_t voxelIndex = vox_index(lx, ly, lz);
 
     const auto& vox = level->chunks->require(x, y, z);
     const auto& def = content->getIndices()->blocks.require(vox.id);
@@ -560,9 +562,11 @@ static int l_set_field(lua::State* L) {
     }
     auto vox = level->chunks->get(x, y, z);
     auto cx = floordiv(x, CHUNK_W);
+    auto cy = floordiv(y, CHUNK_H);
     auto cz = floordiv(z, CHUNK_D);
-    auto chunk = level->chunks->getChunk(cx, cz);
+    auto chunk = level->chunks->getChunk(cx, cy, cz);
     auto lx = x - cx * CHUNK_W;
+    auto ly = x - cy * CHUNK_H;
     auto lz = z - cz * CHUNK_W;
     size_t voxelIndex = vox_index(lx, y, lz);
 
