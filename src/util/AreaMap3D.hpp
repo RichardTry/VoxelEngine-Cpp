@@ -209,7 +209,7 @@ namespace util {
             return sizeX;
         }
 
-        TCoord getLenght() const {
+        TCoord getLength() const {
             return sizeZ;
         }
 
